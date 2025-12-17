@@ -45,10 +45,13 @@ client_ids = {
     "Accounts Control UI" : "a40d7d7d-59aa-447e-a655-679a4107e548",
     "Copilot App" : "14638111-3389-403d-b206-a6a71d9f8f16",
     "Designer App" : "598ab7bb-a59c-4d31-ba84-ded22c220dbd",
+    "Editor Browser Extension" : "1a20851a-696e-4c7e-96f4-c282dfe48872",
     "Enterprise Roaming and Backup" : "60c8bde5-3167-4f92-8fdb-059f6176dc0f",
+    "Get Help" : "1f7f6f43-2f81-429c-8499-293566d0ab0c",
     "Intune MAM" : "6c7e8096-f593-4d72-807f-a5f86dcc9c77",
     "Loop" : "0922ef46-e1b9-4f7e-9134-9ad00547eb41",
     "M365 Compliance Drive Client" : "be1918be-3fe3-4be9-b32b-b542fc27f02e",
+    "Managed Home Screen" : "3b68e96c-82d3-41b3-99b8-56c260cf38d8",
     "Microsoft 365 Copilot" : "0ec893e0-5785-4de6-99da-4ed124e5296c",
     "Microsoft Authentication Broker" : "29d9ed98-a469-4536-ade2-f981bc1d605e",
     "Microsoft Authenticator App" : "4813382a-8fa7-425e-ab75-3b753aab3abb",
@@ -100,6 +103,7 @@ client_ids = {
     "ZTNA Network Access Client Private" : "760282b4-0cfc-4952-b467-c8e0298fee16",
     "ZTNA Network Access Client" : "038ddad9-5bbe-4f64-b0cd-12434d1e633b",
 }
+
 
 # https://www.whatismybrowser.com/guides/the-latest-user-agent/
 user_agents = {
@@ -216,10 +220,30 @@ def authenticate(username, password, resource, client_id, user_agent, proxy, get
     
     if response.status_code == 200:
         success_string = colored("Success! No MFA","green", attrs=['bold'])
-        print(f"[+] {resource[0]} - {client_id[0]} - {user_agent[0]} - {success_string}")
+        json_text = json.loads(response.text)
+        scope = json_text.get('scope', 'None')
+        scope_string = colored(f"Token Scope: {scope}", attrs=['bold'])
+
+        print(f"[+] {resource[0]} - {client_id[0]} - {user_agent[0]} - {success_string} - {scope_string}")
+
         if get_token:
-           json_text = json.loads(response.text)
+           print(f"\n{'=' * 35}")
+           print("         RAW TOKEN OUTPUT")
+           print(f"{'=' * 35}\n")
            print(json.dumps(json_text, indent=2))
+           access_token = json_text.get('access_token', 'None')
+           refresh_token = json_text.get('refresh_token', 'None')
+           id_token = json_text.get('id_token', 'None')
+           graphrunner = f"""$tokens = @{{
+"access_token" = "{access_token}"
+"refresh_token" = "{refresh_token}"
+"id_token" = "{id_token}"
+}}\n"""
+           print(f"\n{'=' * 35}")
+           print("     GRAPHRUNNER TOKEN IMPORT")
+           print(f"{'=' * 35}\n")
+           print(graphrunner)
+
         else:
           return resource, client_id, user_agent
 
@@ -704,7 +728,7 @@ def add_shared_arguments(parser):
     parser.add_argument('-p', metavar="password", help="Password for account", type=str) 
 
 def main():
-    banner = "\nFindMeAccess v3.0\n"
+    banner = "\nFindMeAccess v3.1\n"
     print(banner)
 
     parser = argparse.ArgumentParser(description='')
